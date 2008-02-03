@@ -9,6 +9,6 @@ commonEnv = CNBSEnvironment(PROJNAME       = 'glue',
                             LIBRARY        = True,
                             SHORTCUTS      = True,
                             DEFAULTVERSION = True,
-			    REVISIONCONTROL = RCS.GNUArch('../', 'glue', 'unstable', '0.3'),
+			    REVISIONCONTROL = RCS.Bazaar('../', 'glue', 'main', '1.0'),
                             )
 Return('commonEnv')
