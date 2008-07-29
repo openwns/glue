@@ -6,5 +6,6 @@ srcFiles['BASE'] = [
 
 srcFiles['TEST'] = [
     ]
-
-Return('srcFiles')
+hppFiles = []
+pyconfigs = []
+Return('srcFiles hppFiles pyconfigs')
