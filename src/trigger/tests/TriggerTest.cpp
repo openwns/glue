@@ -45,13 +45,13 @@ namespace glue { namespace trigger {
 			{} // DemoBERProvider
 		};
 
- 		void prepare();
+		void prepare();
 		void cleanup();
 
 		void testSegmentSizeCalculation();
 
 	private:
-		wns::ldk::Layer* layer;
+		wns::ldk::ILayer* layer;
 		wns::ldk::fun::Main* fun;
 
 		Trigger* trigger;

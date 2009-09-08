@@ -95,7 +95,7 @@ namespace glue {
 			wns::pyconfig::View config;
 		};
 
- 		void prepare();
+		void prepare();
 		void cleanup();
 
 		void testReporting();
@@ -112,7 +112,7 @@ namespace glue {
 		void testInvalidPacketSize();
 
 	private:
-		wns::ldk::Layer* layer;
+		wns::ldk::ILayer* layer;
 		wns::ldk::fun::Main* fun;
 
 		BERMeasurementReporting* berMeasurementReporting;

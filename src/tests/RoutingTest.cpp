@@ -55,7 +55,7 @@ namespace glue {
 			{}
 		};
 
- 		void prepare();
+		void prepare();
 		void cleanup();
 
 		void testNoRouteCompoundWithoutRoutingInformation();
@@ -72,7 +72,7 @@ namespace glue {
 		void doCatchExceptionSetUp(wns::pyconfig::View routingView);
 		void doCatchExceptionTearDown();
 
-		wns::ldk::Layer* layer;
+		wns::ldk::ILayer* layer;
 		wns::ldk::fun::Main* fun;
 
 		DummyHandler* dummyHandler;

@@ -56,7 +56,7 @@ namespace glue { namespace tests {
 	observers();
 
     private:
-	wns::ldk::Layer* layer;
+	wns::ldk::ILayer* layer;
 	wns::ldk::fun::Main* fun;
 
 	Pilot* pilot;
@@ -120,7 +120,7 @@ namespace glue { namespace tests {
 	if (layer != NULL) delete layer;
     }
 
-    void 
+    void
     PilotTest::beacon()
     {
 	lowerFU->open(false);
