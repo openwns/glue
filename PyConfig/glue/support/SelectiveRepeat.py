@@ -38,7 +38,6 @@ import openwns.SAR
 import openwns.Tools
 import openwns.Multiplexer
 
-import glue.Reconfiguration
 import glue.Glue
 import glue.Trigger
 import glue.Routing

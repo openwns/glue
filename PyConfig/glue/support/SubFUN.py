@@ -30,7 +30,6 @@ import openwns.Group
 import openwns.Multiplexer
 import openwns.Tools
 
-import glue.Reconfiguration
 import glue.InSequenceChecker
 import glue.Routing
 

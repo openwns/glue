@@ -39,7 +39,6 @@ import openwns.Tools
 import openwns.Multiplexer
 import openwns.ARQ
 
-import glue.Reconfiguration
 import glue.evaluation
 
 class Logger(openwns.logger.Logger):
