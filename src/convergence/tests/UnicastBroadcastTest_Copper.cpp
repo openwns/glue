@@ -253,7 +253,7 @@ namespace glue { namespace convergence { namespace tests {
 		wns::pyconfig::View broadcastUpperConfig = wns::pyconfig::helper::createViewFromDropInConfig("glue.Glue",
 																									 "BroadcastUpperConvergence");
 		broadcastUpperConvergence = new BroadcastUpper(fun, broadcastUpperConfig);
-		wns::pyconfig::View dispatcherConfig = wns::pyconfig::helper::createViewFromDropInConfig("wns.Multiplexer",
+		wns::pyconfig::View dispatcherConfig = wns::pyconfig::helper::createViewFromDropInConfig("openwns.Multiplexer",
 																								 "Dispatcher",
 																								 "1");
 		dispatcher = new wns::ldk::multiplexer::Dispatcher(fun, dispatcherConfig);

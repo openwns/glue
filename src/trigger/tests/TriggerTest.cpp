@@ -81,8 +81,8 @@ namespace glue { namespace trigger {
 		demoBERProvider = new DemoBERProvider(fun, DemoBERProviderView);
 
 		wns::pyconfig::Parser SARPyCo;
-		SARPyCo.loadString("import wns.SAR\n"
-				   "sar = wns.SAR.Fixed(100)\n");
+		SARPyCo.loadString("import openwns.SAR\n"
+				   "sar = openwns.SAR.Fixed(100)\n");
 		wns::pyconfig::View SARView(SARPyCo, "sar");
 		sar = new wns::ldk::sar::Fixed(fun, SARView);
 

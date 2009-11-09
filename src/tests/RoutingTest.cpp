@@ -108,8 +108,8 @@ namespace glue {
 		upperConvergence->registerHandler(wns::service::dll::TESTING, dummyHandler);
 
 		wns::pyconfig::Parser dispatcherPyCo;
-		dispatcherPyCo.loadString("import wns.Multiplexer\n"
-					  "dispatcher = wns.Multiplexer.Dispatcher(1)\n");
+		dispatcherPyCo.loadString("import openwns.Multiplexer\n"
+					  "dispatcher = openwns.Multiplexer.Dispatcher(1)\n");
 		wns::pyconfig::View dispatcherView(dispatcherPyCo, "dispatcher");
 		dispatcher = new wns::ldk::multiplexer::Dispatcher(fun, dispatcherView);
 
