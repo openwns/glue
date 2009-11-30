@@ -115,7 +115,7 @@ hppFiles = [
 pyconfigs = [
 'glue/Routing.py',
 'glue/BERMeasurementReporting.py',
-'glue/InSequenceChecker.py',
+#   'glue/InSequenceChecker.py',
 'glue/Stamper.py',
 'glue/Trigger.py',
 'glue/ARQFSM.py',
