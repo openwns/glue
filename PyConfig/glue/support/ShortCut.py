@@ -37,11 +37,14 @@ import openwns.logger
 import openwns.SAR
 import openwns.Tools
 import openwns.Multiplexer
+import openwns.Group
+import openwns.FlowSeparator
 
 import glue.Glue
 import glue.Trigger
 import glue.Routing
 import glue.BERMeasurementReporting
+import glue.KeyBuilder
 
 class ShortCutComponent(glue.Glue.Component):
     """Minimalistic configuration for testing
@@ -168,41 +171,99 @@ class RichConnectShortCutComponent(glue.Glue.Component):
     def __init__(self, node, name, phyDataTransmission, phyNotification, bufferSize = 20, resendTimeout = 0.1):
         super(RichConnectShortCutComponent, self).__init__(node, name, phyDataTransmission, phyNotification)
         # probes
-        perProbe = wns.Probe.ErrorRate(
-            name = "errorRate",
-            prefix = "glue.packet",
-            errorRateProvider = "lowerConvergence",
-            commandName = "packetErrorRate")
+        perProbe = openwns.FUN.Node("perProbe", openwns.Probe.ErrorRate(
+                name = "errorRate",
+                prefix = "glue.packet",
+                errorRateProvider = "lowerConvergence",
+                commandName = "packetErrorRate",
+                parentLogger=self.logger))
+
+        topWindowProbe = openwns.FUN.Node("topWindowProbe", openwns.Probe.Window(
+                "glue.topWindowProbe",
+                "glue.unicastTop",
+                windowSize=.25,
+                parentLogger=self.logger))
+
+        topDelayProbe = openwns.FUN.Node("delayProbe", openwns.Probe.Packet(
+                "glue.topDelayProbe",
+                "glue.unicastTop",
+                parentLogger=self.logger))
+
+        bottomWindowProbe = openwns.FUN.Node("bottomWindowProbe", openwns.Probe.Window(
+                "glue.bottomWindowProbe",
+                "glue.bottom",
+                windowSize=.25,
+                parentLogger=self.logger))
+
+        bottomDelayProbe = openwns.FUN.Node("bottomDelayProbe", openwns.Probe.Packet(
+                "glue.bottomDelayProbe",
+                "glue.bottom",
+                parentLogger=self.logger))
 
         # create Buffer, ARQ and CRC
-        unicastBuffer = wns.FUN.Node("unicastBuffer", wns.Buffer.Dropping(
-            size = bufferSize,
-            lossRatioProbeName = 'glue.unicastBufferLoss',
-            sizeProbeName = 'glue.unicastBufferSize'))
 
-        broadcastBuffer = wns.FUN.Node("broadcastBuffer", wns.Buffer.Dropping(
+        broadcastBuffer = openwns.FUN.Node("broadcastBuffer", openwns.Buffer.Dropping(
             size = bufferSize,
             lossRatioProbeName = 'glue.broadcastBufferLoss',
-            sizeProbeName = 'glue.broadcastBufferSize'))
+            sizeProbeName = 'glue.broadcastBufferSize',
+            parentLogger=self.logger))
 
-        arq = wns.FUN.Node("arq", wns.ARQ.StopAndWaitRC(resendTimeout=resendTimeout))
-        arqMux = wns.FUN.Node("arqMux", wns.Multiplexer.Dispatcher(opcodeSize = 0))
-        crc = wns.FUN.Node("crc", wns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
+        subFUN = openwns.FUN.FUN()
+
+        unicastBuffer = openwns.FUN.Node("unicastBuffer", openwns.Buffer.Dropping(
+            size = bufferSize,
+            lossRatioProbeName = 'glue.unicastBufferLoss',
+            sizeProbeName = 'glue.unicastBufferSize',
+            parentLogger=self.logger))
+
+        inSequenceChecker = openwns.FUN.Node("inSeuqenceChecker", openwns.Tools.InSequenceChecker(parentLogger=self.logger))
+
+        arq = openwns.FUN.Node("arq", openwns.ARQ.StopAndWaitRC(resendTimeout=resendTimeout, parentLogger=self.logger))
+
+        subFUN.add(unicastBuffer)
+        subFUN.add(inSequenceChecker)
+        subFUN.add(arq)
+
+        subFUN.connect(unicastBuffer, inSequenceChecker)
+        subFUN.connect(inSequenceChecker, arq)
+
+        print "New config"
+        groupFU = openwns.Group.Group(subFUN, "unicastBuffer")
+        groupFU.bottomPorts.append(openwns.Group.PortConnector("arq",
+                                                               openwns.ARQ.StopAndWaitRC.Data,
+                                                               openwns.ARQ.StopAndWaitRC.Data))
+        groupFU.bottomPorts.append(openwns.Group.PortConnector("arq",
+                                                               openwns.ARQ.StopAndWaitRC.Ack,
+                                                               openwns.ARQ.StopAndWaitRC.Ack))
+
+        flowSeparatorFU = openwns.FlowSeparator.FlowSeparator(glue.KeyBuilder.KeyBuilder("unicastUpperConvergence"),
+                                                              openwns.FlowSeparator.PrototypeCreator('group', groupFU),
+                                                              parentLogger=self.logger)
+
+        flowSeparator = openwns.FUN.Node('FlowSeparator', flowSeparatorFU)
+
+        arqMux = openwns.FUN.Node("arqMux", openwns.Multiplexer.Dispatcher(opcodeSize = 0, parentLogger=self.logger))
+        crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss', parentLogger=self.logger))
 
         # add probes
         self.fun.add(perProbe)
         # add Buffer, ARQ and CRC to fun
         self.fun.add(unicastBuffer)
         self.fun.add(broadcastBuffer)
-        self.fun.add(arq)
+        self.fun.add(topWindowProbe)
+        self.fun.add(topDelayProbe)
+        self.fun.add(flowSeparator)
         self.fun.add(arqMux)
         self.fun.add(crc)
+        self.fun.add(bottomWindowProbe)
+        self.fun.add(bottomDelayProbe)
 
         # connect unicast path
-        self.fun.connect(self.unicastUpperConvergence, unicastBuffer)
-        self.fun.connect(unicastBuffer, arq)
-        self.fun.connect(arq, wns.ARQ.StopAndWaitRC.Data, arqMux)
-        self.fun.connect(arq, wns.ARQ.StopAndWaitRC.Ack, arqMux)
+        self.fun.connect(self.unicastUpperConvergence, topWindowProbe)
+        self.fun.connect(topWindowProbe, topDelayProbe)
+        self.fun.connect(topDelayProbe, flowSeparator)
+        self.fun.connect(flowSeparator, openwns.ARQ.StopAndWaitRC.Data, arqMux)
+        self.fun.connect(flowSeparator, openwns.ARQ.StopAndWaitRC.Ack, arqMux)
         self.fun.connect(arqMux, self.dispatcher)
         # connect broadcast path
         self.fun.connect(self.broadcastUpperConvergence, broadcastBuffer)
@@ -210,4 +271,8 @@ class RichConnectShortCutComponent(glue.Glue.Component):
         # connect common path
         self.fun.connect(self.dispatcher, crc)
         self.fun.connect(crc, perProbe)
-        self.fun.connect(perProbe, self.lowerConvergence)
+        self.fun.connect(perProbe, bottomWindowProbe)
+        self.fun.connect(bottomWindowProbe, bottomDelayProbe)
+        self.fun.connect(bottomDelayProbe, self.lowerConvergence)
+
+        self.logger.level = 3

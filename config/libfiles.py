@@ -41,6 +41,7 @@ srcFiles = [
     'src/BERConsumer.cpp',
     'src/BERMeasurementReporting.cpp',
     'src/Pilot.cpp',
+    'src/KeyBuilder.cpp',
 
     # macs
     'src/mac/Aloha.cpp',
@@ -102,6 +103,7 @@ hppFiles = [
 'src/convergence/Lower.hpp',
 'src/convergence/Upper.hpp',
 'src/Glue.hpp',
+'src/KeyBuilder.hpp',
 'src/mac/Aloha.hpp',
 'src/mac/Backoff.hpp',
 'src/mac/CSMACA.hpp',
@@ -121,6 +123,7 @@ pyconfigs = [
 'glue/ARQFSM.py',
 'glue/Pilot.py',
 'glue/Glue.py',
+'glue/KeyBuilder.py',
 'glue/__init__.py',
 'glue/support/SubFUN.py',
 'glue/support/Aloha.py',
