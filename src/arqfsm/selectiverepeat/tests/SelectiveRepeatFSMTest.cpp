@@ -178,7 +178,7 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		for (int i = 0; i < (windowSize+1); ++i)
 			upper->sendData(fun->createCompound());
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
@@ -196,21 +196,21 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		for (int i = 0; i < (3*windowSize); ++i)
 			upper->sendData(fun->createCompound());
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(2*windowSize), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(2*windowSize), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		for (int i = 0; i < windowSize; ++i)
 			lower->onData(createACKFrame(lower->sent[i]));
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(windowSize), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(windowSize), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(2*windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		for (int i = 0; i < windowSize; ++i)
 			lower->onData(createACKFrame(lower->sent[i+windowSize]));
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(0), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(0), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(3*windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
@@ -308,7 +308,7 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		for (int i = 0; i < (windowSize+3); ++i)
 			upper->sendData(fun->createCompound());
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(3), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(3), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
@@ -316,7 +316,7 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		wns::ldk::CompoundPtr ackFrame = createACKFrame(lower->sent[2]);
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(3), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(3), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
@@ -324,7 +324,7 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		ackFrame = createACKFrame(lower->sent[0]);
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(2), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(2), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize+1), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
@@ -339,7 +339,7 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		ackFrame = createACKFrame(lower->sent[1]);
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(0), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(0), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize+4), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 	} // testRetransmissionIFrame2
@@ -350,20 +350,20 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		for (int i = 0; i < (windowSize+1); ++i)
 			upper->sendData(fun->createCompound());
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		wns::ldk::CompoundPtr ackFrame = createACKFrame(lower->sent[1]);
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 	} // testDuplicateACKFrame
@@ -374,20 +374,20 @@ namespace glue { namespace arqfsm { namespace selectiverepeat {
 		for (int i = 0; i < (windowSize+2); ++i)
 			upper->sendData(fun->createCompound());
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(2), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(2), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		wns::ldk::CompoundPtr ackFrame = createACKFrame(lower->sent[0]);
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize+1), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 
 		lower->onData(ackFrame);
 
-		CPPUNIT_ASSERT_EQUAL(uint32_t(1), buffer->getSize());
+		CPPUNIT_ASSERT_EQUAL(unsigned long int(1), buffer->getSize());
 		CPPUNIT_ASSERT_EQUAL(size_t(windowSize+1), lower->sent.size());
 		CPPUNIT_ASSERT_EQUAL(std::string("glue_arqfsm_selectiverepeat_WaitingForACKsBufferFull"), arq->getStateName());
 	} // testSequenceNumberACKFrameNotInWindow

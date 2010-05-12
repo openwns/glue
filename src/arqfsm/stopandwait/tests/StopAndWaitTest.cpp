@@ -97,7 +97,7 @@ StopAndWaitFSMTest::testFillWindow()
 	upper->sendData(fuNet->createCompound());
 	upper->sendData(fuNet->createCompound());
 
-	CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(1), buffer->getSize());
+	CPPUNIT_ASSERT_EQUAL(static_cast<unsigned long int>(1), buffer->getSize());
 	CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(1), lower->sent.size());
 } // testFillQWindow
 
@@ -118,7 +118,7 @@ StopAndWaitFSMTest::testSendOnAck()
 	ackPCI->peer.NS = (receivedPCI->peer.NS + 1) % 2;
 
 	lower->onData(compound);
-	CPPUNIT_ASSERT_EQUAL(static_cast<uint32_t>(0), buffer->getSize());
+	CPPUNIT_ASSERT_EQUAL(static_cast<unsigned long int>(0), buffer->getSize());
 	CPPUNIT_ASSERT_EQUAL(static_cast<size_t>(2), lower->sent.size());
 } // testSendOnAck
 

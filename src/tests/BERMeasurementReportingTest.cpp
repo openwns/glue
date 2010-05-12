@@ -394,8 +394,8 @@ namespace glue {
 		Bit payloadSize = 0;
 		stub->calculateSizes(stub->sent[0]->getCommandPool(), headerSize, payloadSize);
 
-		CPPUNIT_ASSERT_EQUAL(32, headerSize);
-		CPPUNIT_ASSERT_EQUAL(0, payloadSize);
+		CPPUNIT_ASSERT_EQUAL(Bit(32), headerSize);
+		CPPUNIT_ASSERT_EQUAL(Bit(0), payloadSize);
 	} // testHeaderSize
 
 	void
