@@ -54,7 +54,7 @@ class CSMACAComponent(glue.Glue.Component):
     arq = None
 
     def __init__(self, node, name, phyDataTransmission, phyNotification, phyDataTransmissionFeedbackName, bufferSize = 500*1024*8):
-        super(CSMACAComponent, self).__init__(node, name, phyDataTransmission, phyNotification, blocking=False)
+        super(CSMACAComponent, self).__init__(node, name, phyDataTransmission, phyNotification)
         # probes
         perProbe = openwns.Probe.ErrorRate(
             name = "errorRate",
@@ -88,6 +88,15 @@ class CSMACAComponent(glue.Glue.Component):
         # 24 Byte header (802.11)
         overhead = openwns.Tools.Overhead(overhead = 24*8, commandName = "overhead")
         csmaCAMAC = glue.Glue.CSMACAMAC(commandName = "csmaCAMAC", stopAndWaitARQName = self.arq.commandName, phyNotification = self.phyNotification, parentLogger = self.logger)
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = False,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
         # add Buffer, ARQ and CRC to fun
         self.fun.add(unicastBuffer)
         self.fun.add(broadcastBuffer)
@@ -95,6 +104,7 @@ class CSMACAComponent(glue.Glue.Component):
         self.fun.add(crc)
         self.fun.add(csmaCAMAC)
         self.fun.add(overhead)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(unicastBuffer)

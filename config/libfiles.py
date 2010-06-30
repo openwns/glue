@@ -35,6 +35,7 @@ srcFiles = [
     # convergence
     'src/convergence/Upper.cpp',
     'src/convergence/Lower2Copper.cpp',
+    'src/convergence/Lower2OFDMAPhy.cpp',
 
     'src/Routing.cpp',
     'src/BERProvider.cpp',
@@ -100,6 +101,7 @@ hppFiles = [
 'src/BERProvider.hpp',
 'src/Component.hpp',
 'src/convergence/Lower2Copper.hpp',
+'src/convergence/Lower2OFDMAPhy.hpp',
 'src/convergence/Lower.hpp',
 'src/convergence/Upper.hpp',
 'src/Glue.hpp',

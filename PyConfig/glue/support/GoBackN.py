@@ -57,6 +57,15 @@ class GoBackNARQ(glue.Glue.Component):
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
         bottomWindowProbe = openwns.FUN.Node("bottomWindowProbe", openwns.Probe.Window("glue.bottomWindowProbe", "glue.bottom", windowSize=.25))
         bottomDelayProbe = openwns.FUN.Node("bottomDelayProbe", openwns.Probe.Packet("glue.bottomDelayProbe", "glue.bottom"))
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
         # add
         self.fun.add(unicastBuffer)
         self.fun.add(unicastTopWindowProbe)
@@ -68,6 +77,7 @@ class GoBackNARQ(glue.Glue.Component):
         self.fun.add(crc)
         self.fun.add(bottomWindowProbe)
         self.fun.add(bottomDelayProbe)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(unicastBuffer)
@@ -102,6 +112,15 @@ class SARGoBackNARQ(glue.Glue.Component):
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
         bottomWindowProbe = openwns.FUN.Node("bottomWindowProbe", openwns.Probe.Window("glue.bottomWindowProbe", "glue.bottom", windowSize=.25))
         bottomDelayProbe = openwns.FUN.Node("bottomDelayProbe", openwns.Probe.Packet("glue.bottomDelayProbe", "glue.bottom"))
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
         # add
         self.fun.add(unicastBuffer)
         self.fun.add(unicastTopWindowProbe)
@@ -115,6 +134,7 @@ class SARGoBackNARQ(glue.Glue.Component):
         self.fun.add(crc)
         self.fun.add(bottomWindowProbe)
         self.fun.add(bottomDelayProbe)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(unicastBuffer)

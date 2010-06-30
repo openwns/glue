@@ -61,10 +61,20 @@ class ShortCutComponent(glue.Glue.Component):
         unicastBuffer = openwns.FUN.Node("unicastBuffer", openwns.Buffer.Dropping(size = bufferSize))
         broadcastBuffer = openwns.FUN.Node("broadcastBuffer", openwns.Buffer.Dropping(size = bufferSize))
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss', parentLogger=self.logger))
-        # add Buffer and CRC to fun
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
+        # add Buffer, LC and CRC to fun
         self.fun.add(unicastBuffer)
         self.fun.add(broadcastBuffer)
         self.fun.add(crc)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(self.bottleNeckDetective)
@@ -88,6 +98,15 @@ class ShortCut(glue.Glue.Component):
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
         bottomWindowProbe = openwns.FUN.Node("bottomWindowProbe", openwns.Probe.Window("glue.bottomWindowProbe", "glue.bottom", windowSize=.25))
         bottomDelayProbe = openwns.FUN.Node("bottomDelayProbe", openwns.Probe.Packet("glue.bottomDelayProbe", "glue.bottom"))
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
         # add
         self.fun.add(unicastBuffer)
         self.fun.add(broadcastBuffer)
@@ -96,6 +115,7 @@ class ShortCut(glue.Glue.Component):
         self.fun.add(crc)
         self.fun.add(bottomWindowProbe)
         self.fun.add(bottomDelayProbe)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(unicastBuffer)
@@ -108,6 +128,98 @@ class ShortCut(glue.Glue.Component):
         topWindowProbe.connect(topDelayProbe)
         topDelayProbe.connect(crc)
         crc.connect(bottomWindowProbe)
+        bottomWindowProbe.connect(bottomDelayProbe)
+        bottomDelayProbe.connect(self.lowerConvergence)
+
+class OFDMAShortCut(glue.Glue.Component):
+    def __init__(self, 
+                _node, 
+                _name, 
+                _phyDataTransmission, 
+                _phyNotification, 
+                dataRate, 
+                _bufferSize = 20, 
+                _sarFragmentSize = 160):
+        super(OFDMAShortCut, self).__init__(_node, _name, _phyDataTransmission, _phyNotification)
+        # create
+        unicastBuffer = openwns.FUN.Node(
+            "unicastBuffer", openwns.Buffer.Dropping(
+                size = _bufferSize, 
+                lossRatioProbeName = 'glue.unicastBufferLoss', 
+                sizeProbeName = 'glue.unicastBufferSize'))
+                
+        broadcastBuffer = openwns.FUN.Node(
+            "broadcastBuffer", openwns.Buffer.Dropping(
+                size = _bufferSize, 
+                lossRatioProbeName = 'glue.broadcastBufferLoss', 
+                sizeProbeName = 'glue.broadcastBufferSize'))
+                
+        topWindowProbe = openwns.FUN.Node(
+            "topWindowProbe", openwns.Probe.Window(
+                "glue.topWindowProbe", 
+                "glue.unicastTop", 
+                windowSize=.25))
+                
+        topDelayProbe = openwns.FUN.Node(
+            "delayProbe", 
+            openwns.Probe.Packet(
+                "glue.topDelayProbe", 
+                "glue.unicastTop"))
+                
+        crc = openwns.FUN.Node(
+            "crc", openwns.CRC.CRC(
+                "lowerConvergence", 
+                lossRatioProbeName='glue.crcLoss'))
+                
+        perProbe = openwns.Probe.ErrorRate(
+            name = "errorRate",
+            prefix = "glue.packet",
+            errorRateProvider = "lowerConvergence",
+            commandName = "packetErrorRate")
+                
+        bottomWindowProbe = openwns.FUN.Node(
+            "bottomWindowProbe", openwns.Probe.Window(
+                "glue.bottomWindowProbe", 
+                "glue.bottom", 
+                windowSize=.25))
+                
+        bottomDelayProbe = openwns.FUN.Node(
+            "bottomDelayProbe", openwns.Probe.Packet(
+                "glue.bottomDelayProbe", 
+                "glue.bottom"))
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence", glue.Glue.Lower2OFDMAPhy(
+                modulation = "BPSK",
+                symbolDuration = 1.0 / dataRate,
+                numSubcarriers = 1,
+                unicastRouting = self.unicastUpperConvergence.commandName,
+                broadcastRouting = self.broadcastUpperConvergence.commandName))
+
+        
+        # add
+        self.fun.add(unicastBuffer)
+        self.fun.add(broadcastBuffer)
+        self.fun.add(topWindowProbe)
+        self.fun.add(topDelayProbe)
+        self.fun.add(crc)
+        self.fun.add(perProbe)
+        self.fun.add(bottomWindowProbe)
+        self.fun.add(bottomDelayProbe)
+        self.fun.add(self.lowerConvergence)
+
+        # connect unicast path
+        self.unicastUpperConvergence.connect(unicastBuffer)
+        unicastBuffer.connect(self.dispatcher)
+        # connect broadcast path
+        self.broadcastUpperConvergence.connect(broadcastBuffer)
+        broadcastBuffer.connect(self.dispatcher)
+        # connect common path
+        self.dispatcher.connect(topWindowProbe)
+        topWindowProbe.connect(topDelayProbe)
+        topDelayProbe.connect(crc)
+        crc.connect(perProbe)
+        perProbe.connect(bottomWindowProbe)
         bottomWindowProbe.connect(bottomDelayProbe)
         bottomDelayProbe.connect(self.lowerConvergence)
 
@@ -141,6 +253,14 @@ class AcknowledgedModeShortCutComponent(glue.Glue.Component):
         arq = openwns.FUN.Node("arq", openwns.ARQ.StopAndWait(resendTimeout=resendTimeout))
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
 
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+
         # add probes
         self.fun.add(perProbe)
         # add Buffer, ARQ and CRC to fun
@@ -148,6 +268,7 @@ class AcknowledgedModeShortCutComponent(glue.Glue.Component):
         self.fun.add(broadcastBuffer)
         self.fun.add(arq)
         self.fun.add(crc)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(unicastBuffer)
@@ -245,6 +366,14 @@ class RichConnectShortCutComponent(glue.Glue.Component):
         arqMux = openwns.FUN.Node("arqMux", openwns.Multiplexer.Dispatcher(opcodeSize = 0, parentLogger=self.logger))
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss', parentLogger=self.logger))
 
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = True,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+
         # add probes
         self.fun.add(perProbe)
         # add Buffer, ARQ and CRC to fun
@@ -257,6 +386,7 @@ class RichConnectShortCutComponent(glue.Glue.Component):
         self.fun.add(crc)
         self.fun.add(bottomWindowProbe)
         self.fun.add(bottomDelayProbe)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.fun.connect(self.unicastUpperConvergence, topWindowProbe)

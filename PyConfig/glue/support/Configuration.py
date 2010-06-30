@@ -43,7 +43,7 @@ import glue.Trigger
 import glue.Routing
 import glue.BERMeasurementReporting
 
-from glue.support.ShortCut import ShortCut, ShortCutComponent, AcknowledgedModeShortCutComponent, RichConnectShortCutComponent
+from glue.support.ShortCut import ShortCut, ShortCutComponent, AcknowledgedModeShortCutComponent, RichConnectShortCutComponent, OFDMAShortCut
 from glue.support.StopAndWait import StopAndWaitARQ, SARStopAndWaitARQ
 from glue.support.SelectiveRepeat import SelectiveRepeatARQ, SARSelectiveRepeatARQ, SARSelectiveRepeatARQTrigger, SARSelectiveRepeatARQTriggerReporting
 from glue.support.GoBackN import GoBackNARQ, SARGoBackNARQ

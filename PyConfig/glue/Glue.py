@@ -122,7 +122,7 @@ class Component(openwns.node.Component):
 
     nextAddress = 1
 
-    def __init__(self, node, name, phyDataTransmission, phyNotification, blocking = True, **kw):
+    def __init__(self, node, name, phyDataTransmission, phyNotification, **kw):
         """ Create Logger and FUN.
 
         The FUN created here is initialized with three Functional Units:
@@ -143,13 +143,6 @@ class Component(openwns.node.Component):
         self.unicastUpperConvergence = openwns.FUN.Node("unicastUpperConvergence", UnicastUpperConvergence(self.logger, self.loggerEnabled))
         self.broadcastUpperConvergence = openwns.FUN.Node("broadcastUpperConvergence", BroadcastUpperConvergence(self.logger, self.loggerEnabled))
         self.dispatcher = openwns.FUN.Node("dispatcher", openwns.Multiplexer.Dispatcher(opcodeSize = 1, parentLogger=self.logger))
-        self.lowerConvergence = openwns.FUN.Node(
-            "lowerConvergence",
-            Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
-                         broadcastRouting = self.broadcastUpperConvergence.commandName,
-                         blocking = blocking,
-                         parentLogger = self.logger,
-                         enabled = self.loggerEnabled))
 
         self.bottleNeckDetective = openwns.FUN.Node("bottleNeckDetective", openwns.Tools.BottleNeckDetective(0.0, 1.0, self.logger))
 
@@ -168,7 +161,6 @@ class Component(openwns.node.Component):
         self.fun.add(self.unicastUpperConvergence)
         self.fun.add(self.broadcastUpperConvergence)
         self.fun.add(self.dispatcher)
-        self.fun.add(self.lowerConvergence)
         self.fun.add(self.bottleNeckDetective)
 
 class UpperConvergence(openwns.pyconfig.Sealed):
@@ -223,6 +215,34 @@ class Lower2Copper(openwns.pyconfig.Sealed):
         self.broadcastRouting = broadcastRouting
         self.logger = Logger("LowerConvergence", enabled, parentLogger)
         self.blocking = blocking
+
+class Lower2OFDMAPhy(object):
+    
+    __plugin__ = 'glue.convergence.Lower2OFDMAPhy'
+    
+    def __init__(self, 
+                unicastRouting, 
+                broadcastRouting, 
+                modulation, 
+                symbolDuration, 
+                numSubcarriers, 
+                parentLogger = None):
+      
+        import rise
+        import rise.PhyMode
+        import openwns.interval
+        
+        self.phyModeMapper = rise.PhyMode.PhyModeMapper(symbolDuration, numSubcarriers)
+        self.PhyMode = rise.PhyMode.PhyMode(modulation + "-No")
+        self.phyModeMapper.addPhyMode(openwns.interval.Interval(-200.0,200.0,"(]"),self.PhyMode)
+        self.phyModeMapper.setMinimumSINR(
+            self.phyModeMapper.mapEntries[0].sinrInterval.lowerBound)
+        
+        self.unicastRouting = unicastRouting
+        self.broadcastRouting = broadcastRouting
+        self.logger = Logger("LowerConvergence", True, parentLogger)
+        
+        
 
 class CSMACAMAC(openwns.FUN.FunctionalUnit):
     """ DON'T USE RIGHT NOW

@@ -63,19 +63,29 @@ class AlohaComponent(glue.Glue.Component):
         alohaWaitingTime = 0.05,
         bufferSize = 500*1024*8):
 
-        super(AlohaComponent, self).__init__(node, name, phyDataTransmission, phyNotification, blocking=False)
+        super(AlohaComponent, self).__init__(node, name, phyDataTransmission, phyNotification)
         # create Buffer, ARQ and CRC
         unicastBuffer = openwns.FUN.Node("unicastBuffer", openwns.Buffer.Dropping(sizeUnit = 'Bit', size = bufferSize, lossRatioProbeName = 'glue.unicastBufferLoss', sizeProbeName = 'glue.unicastBufferSize'))
         broadcastBuffer = openwns.FUN.Node("broadcastBuffer", openwns.Buffer.Dropping(sizeUnit = 'Bit', size = bufferSize, lossRatioProbeName = 'glue.broadcastBufferLoss', sizeProbeName = 'glue.broadcastBufferSize'))
         self.arq = openwns.FUN.Node("arq", openwns.ARQ.StopAndWait(parentLogger = self.logger, resendTimeout = arqResendTimeout))
         crc = openwns.FUN.Node("crc", openwns.CRC.CRC("lowerConvergence", lossRatioProbeName='glue.crcLoss'))
         alohaMAC = glue.Glue.Aloha(commandName = "alohaMAC", maximumWaitingTime = alohaWaitingTime, parentLogger = self.logger)
+        
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = False,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        
         # add Buffer, ARQ and CRC to fun
         self.fun.add(unicastBuffer)
         self.fun.add(broadcastBuffer)
         self.fun.add(self.arq)
         self.fun.add(crc)
         self.fun.add(alohaMAC)
+        self.fun.add(self.lowerConvergence)
 
         # connect unicast path
         self.unicastUpperConvergence.connect(self.bottleNeckDetective)
