@@ -70,11 +70,11 @@ namespace glue {
 		doOnData(const wns::ldk::CompoundPtr& compound);
 
 		virtual void
-		sendCompoundAfterElapsedBackoff();
+		allowTransmissionAfterElapsedBackoff();
 
 		wns::logger::Logger logger;
 
-		wns::ldk::CompoundPtr compound;
+                bool allowTransmission;
 
 		wns::simulator::Time maxWait;
 

@@ -25,6 +25,7 @@
 
 #include <WNS/logger/Logger.hpp>
 #include <WNS/pyconfig/View.hpp>
+#include <WNS/Enum.hpp>
 
 #include <vector>
 
@@ -36,6 +37,17 @@ namespace glue { namespace convergence {
 } // glue
 
 namespace glue {
+
+    /**
+     * @brief Definition of station types
+     */
+    ENUM_BEGIN(StationTypes);
+    ENUM(router,  1);
+    ENUM(client, 2);
+    ENUM_END();
+
+    typedef int StationType;
+
 
 	/**
 	 * @brief Offers a DLL service to higher layers
@@ -87,6 +99,17 @@ namespace glue {
 		 */
 		virtual void
 		onShutdown();
+
+            /**
+             * @brief Indicate the station type, i.e. access point or user terminal.
+             *
+             * The station type IDs correspond to the enum StationType.
+             */
+            StationType getStationType() const
+            {
+                return stationType_;
+            }
+
 		//@}
 	protected:
 
@@ -136,6 +159,11 @@ namespace glue {
 		 * @brief MAC address of this DLL
 		 */
 		wns::service::dll::UnicastAddress sourceMACAddress;
+
+            /**
+             * @brief Station type
+             */
+            StationType stationType_;
 
 		/**
 		 * @brief Logging

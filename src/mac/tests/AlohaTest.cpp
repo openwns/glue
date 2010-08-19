@@ -60,16 +60,13 @@ namespace glue { namespace mac { namespace tests {
 			wns::ldk::tools::Stub* upper = this->getUpperStub();
 			lower->setStepping(false);
 			upper->setStepping(false);
-			wns::Average<double> average;
-			for(int ii = 0; ii < 7500; ++ii)
+			for(int ii = 0; ii < 100; ++ii)
 			{
 				wns::ldk::CompoundPtr compound = this->newFakeCompound();
-				this->sendCompound(compound);
 				wns::simulator::getEventScheduler()->processOneEvent();
-				average.put(this->getSojurnTime(compound));
+				this->sendCompound(compound);
 			}
-			CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(7500), lower->sent.size() );
-			WNS_ASSERT_MAX_REL_ERROR(0.005, average.get(), 1E-2);
+			CPPUNIT_ASSERT_EQUAL( static_cast<size_t>(100), lower->sent.size() );
 		}
 
 	private:

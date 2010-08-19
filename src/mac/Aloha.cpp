@@ -31,11 +31,19 @@ Aloha::Aloha(wns::ldk::fun::FUN* fun, const wns::pyconfig::View& config) :
 	wns::ldk::HasDeliverer<>(),
 	wns::Cloneable<Aloha>(),
 	logger(config.get("logger")),
-	compound(),
+	allowTransmission(false),
 	maxWait(config.get<wns::simulator::Time>("maximumWaitingTime")),
 	uniform(0.0, 1.0, wns::simulator::getRNG())
 {
-	MESSAGE_SINGLE(NORMAL, this->logger, "created")
+        MESSAGE_SINGLE(NORMAL, this->logger, "created");
+
+	wns::simulator::Time randomBackoff = uniform() * this->maxWait;
+	MESSAGE_SINGLE(
+		NORMAL,
+		this->logger,
+		"First Compound will be sent in " << randomBackoff << " seconds the earliest");
+        wns::events::MemberFunction<Aloha> ev (this, &Aloha::allowTransmissionAfterElapsedBackoff);
+        wns::simulator::getEventScheduler()->scheduleDelay(ev, randomBackoff);
 }
 
 
@@ -48,31 +56,28 @@ Aloha::~Aloha()
 bool
 Aloha::doIsAccepting(const wns::ldk::CompoundPtr& /*_compound*/) const
 {
-	if (this->compound == wns::ldk::CompoundPtr())
-	{
-		// there is room for exactly one compound
-		return true;
-	}
-	else
-	{
-		return false;
-	}
+        return allowTransmission;
 }
 
 
 void
-Aloha::doSendData(const wns::ldk::CompoundPtr& _compound)
+Aloha::doSendData(const wns::ldk::CompoundPtr& compound)
 {
-	assure(this->compound == wns::ldk::CompoundPtr(), "already got a compound!");
-	assure(_compound != wns::ldk::CompoundPtr(), "Invalid compound (NULL)");
-	this->compound = _compound;
-	// delay by random backoff
+	assure(allowTransmission, "doSendData called although backoff timer has not yet elapsed");
+	assure(this->getConnector()->hasAcceptor(compound) == true, "Not able to send data. Aloha may only be used over NON-BLOCKING PHYs");
+
+	MESSAGE_SINGLE(NORMAL, this->logger, "Sending compound: " << *compound);
+	this->getConnector()->getAcceptor(compound)->sendData(compound);
+
+        allowTransmission = false;
+
+	// start random backoff for the next compound
 	wns::simulator::Time randomBackoff = uniform() * this->maxWait;
 	MESSAGE_SINGLE(
 		NORMAL,
 		this->logger,
-		"Compound ("<< *(this->compound) <<") will be sent in " << randomBackoff << " seconds");
-	wns::events::MemberFunction<Aloha> ev (this, &Aloha::sendCompoundAfterElapsedBackoff);
+		"Next Compound ("<< *compound <<") will be sent in " << randomBackoff << " seconds the earliest");
+	wns::events::MemberFunction<Aloha> ev (this, &Aloha::allowTransmissionAfterElapsedBackoff);
 	wns::simulator::getEventScheduler()->scheduleDelay(ev, randomBackoff);
 }
 
@@ -92,12 +97,8 @@ Aloha::doOnData(const wns::ldk::CompoundPtr& compound)
 
 
 void
-Aloha::sendCompoundAfterElapsedBackoff()
+Aloha::allowTransmissionAfterElapsedBackoff()
 {
-	assure(this->getConnector()->hasAcceptor(compound) == true, "Not able to send data. Aloha may only be used over NON-BLOCKING PHYs");
-	MESSAGE_SINGLE(NORMAL, this->logger, "Sending compound after elapsed backoff:" << *(this->compound));
-	this->getConnector()->getAcceptor(compound)->sendData(compound);
-	this->compound = wns::ldk::CompoundPtr();
-	// wakeup: we are ready to receive another compound
+        allowTransmission = true;
 	this->getReceptor()->wakeup();
 }

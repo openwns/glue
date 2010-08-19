@@ -71,6 +71,9 @@ class Component(openwns.node.Component):
     loggerEnabled = True
     """Logger enabled/disabled"""
 
+    stationType = None
+    """Station type"""
+
     unicastDataTransmission = None
     """FQSN to the unicastDataTransmission service I'm offering """
 
@@ -134,6 +137,7 @@ class Component(openwns.node.Component):
         super(Component, self).__init__(node, name)
         self.logger = Logger("Glue", self.loggerEnabled, node.logger)
         self.logger.level = 2
+        self.stationType = "client"
         self.address = Component.nextAddress
         Component.nextAddress += 1
         self.phyDataTransmission = phyDataTransmission
@@ -142,6 +146,7 @@ class Component(openwns.node.Component):
         self.fun = openwns.FUN.FUN()
         self.unicastUpperConvergence = openwns.FUN.Node("unicastUpperConvergence", UnicastUpperConvergence(self.logger, self.loggerEnabled))
         self.broadcastUpperConvergence = openwns.FUN.Node("broadcastUpperConvergence", BroadcastUpperConvergence(self.logger, self.loggerEnabled))
+
         self.dispatcher = openwns.FUN.Node("dispatcher", openwns.Multiplexer.Dispatcher(opcodeSize = 1, parentLogger=self.logger))
 
         self.bottleNeckDetective = openwns.FUN.Node("bottleNeckDetective", openwns.Tools.BottleNeckDetective(0.0, 1.0, self.logger))
@@ -162,6 +167,23 @@ class Component(openwns.node.Component):
         self.fun.add(self.broadcastUpperConvergence)
         self.fun.add(self.dispatcher)
         self.fun.add(self.bottleNeckDetective)
+
+
+class Component2Copper(Component):
+
+    def __init__(self,  node, name, phyDataTransmission, phyNotification, **kw):
+        super(Component2Copper, self).__init__(node, name, phyDataTransmission, phyNotification, **kw)
+
+        self.lowerConvergence = openwns.FUN.Node(
+            "lowerConvergence",
+            glue.Glue.Lower2Copper(unicastRouting = self.unicastUpperConvergence.commandName,
+                         broadcastRouting = self.broadcastUpperConvergence.commandName,
+                         blocking = False,
+                         parentLogger = self.logger,
+                         enabled = self.loggerEnabled))
+        self.fun.add(self.lowerConvergence)
+
+
 
 class UpperConvergence(openwns.pyconfig.Sealed):
     """(msg) should may be be renamed to Service.DataLinkLayer?"""
