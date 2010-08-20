@@ -87,6 +87,10 @@ Lower2OFDMAPhy::doSendData(const wns::ldk::CompoundPtr& compound)
 
     transmitting_ = true;
 
+    wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
+    LowerCommand* lc = activateCommand(compound->getCommandPool());
+    lc->magic.txStartTime = now;
+
     assure(phyModeMapper_->getPhyModeCount() == 1, "There should be only one PhyMode");
     wns::service::phy::phymode::PhyModeInterfacePtr phyMode;
     phyMode = phyModeMapper_->getPhyModeForIndex(0);
@@ -149,7 +153,7 @@ Lower2OFDMAPhy::onData(wns::osi::PDUPtr pdu, wns::service::phy::power::PowerMeas
             m << rx->getSINR();
             MESSAGE_END();
 
-            LowerCommand* lc = activateCommand(compound->getCommandPool());
+            LowerCommand* lc = getCommand(compound->getCommandPool());
             lc->local.per = 1.0 - pow(1.0 - ber, pdu->getLengthInBits());
             this->wns::ldk::FunctionalUnit::onData(compound);
         }
@@ -161,7 +165,7 @@ Lower2OFDMAPhy::onData(wns::osi::PDUPtr pdu, wns::service::phy::power::PowerMeas
         m << rx->getSINR();
         MESSAGE_END();
 
-        LowerCommand* lc = activateCommand(compound->getCommandPool());
+        LowerCommand* lc = getCommand(compound->getCommandPool());
         lc->local.per = 1.0 - pow(1.0 - ber, pdu->getLengthInBits());
         this->wns::ldk::FunctionalUnit::onData(compound);
     }

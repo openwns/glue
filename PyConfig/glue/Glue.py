@@ -232,11 +232,14 @@ class Lower2Copper(openwns.pyconfig.Sealed):
 
     """
 
+    phyTraceProbeName = None
+
     def __init__(self, unicastRouting, broadcastRouting, blocking = True, parentLogger = None, enabled = True):
         self.unicastRouting = unicastRouting
         self.broadcastRouting = broadcastRouting
         self.logger = Logger("LowerConvergence", enabled, parentLogger)
         self.blocking = blocking
+        self.phyTraceProbeName = "glue.phyTrace"
 
 class Lower2OFDMAPhy(object):
     

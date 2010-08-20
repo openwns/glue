@@ -100,15 +100,15 @@ namespace glue {
 		virtual void
 		onShutdown();
 
-            /**
-             * @brief Indicate the station type, i.e. access point or user terminal.
-             *
-             * The station type IDs correspond to the enum StationType.
-             */
-            StationType getStationType() const
-            {
-                return stationType_;
-            }
+        /**
+            * @brief Indicate the station type, i.e. access point or user terminal.
+            *
+            * The station type IDs correspond to the enum StationType.
+            */
+        StationType getStationType() const
+        {
+            return stationType_;
+        }
 
 		//@}
 	protected:
@@ -160,10 +160,10 @@ namespace glue {
 		 */
 		wns::service::dll::UnicastAddress sourceMACAddress;
 
-            /**
-             * @brief Station type
-             */
-            StationType stationType_;
+        /**
+          * @brief Station type
+          */
+        StationType stationType_;
 
 		/**
 		 * @brief Logging

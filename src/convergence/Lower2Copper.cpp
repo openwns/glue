@@ -19,6 +19,9 @@
 #include <WNS/pyconfig/View.hpp>
 #include <WNS/module/Base.hpp>
 
+#include <WNS/probe/bus/json/probebus.hpp>
+#include <WNS/probe/bus/utils.hpp>
+
 #include <cstdlib>
 
 
@@ -43,6 +46,9 @@ Lower2Copper::Lower2Copper(wns::ldk::fun::FUN* fun, const wns::pyconfig::View& _
 	notificationService(NULL),
 	isBlocking(_config.get<bool>("blocking"))
 {
+    wns::probe::bus::ContextProviderCollection localContext(
+        &fun->getLayer()->getContextProviderCollection());
+    jsonTracing = wns::probe::bus::collector(localContext, config, "phyTraceProbeName");
 } // Lower2Copper
 
 Lower2Copper::~Lower2Copper()
@@ -98,10 +104,18 @@ Lower2Copper::doSendData(const wns::ldk::CompoundPtr& compound)
 
 	if (hasCommandOf(friends.unicastRouting, compound)) {
 		UnicastUpperCommand* command = friends.unicastRouting->getCommand(compound->getCommandPool());
+        wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
+        LowerCommand* lc = activateCommand(compound->getCommandPool());
+        lc->magic.txStartTime = now;
+        lc->magic.senderType = getFUN()->getLayer<Component*>()->getStationType();
 		getDataTransmissionService()->sendData(command->peer.targetMACAddress, compound);
 	}
  	else if (hasCommandOf(friends.broadcastRouting, compound)) {
 		BroadcastUpperCommand* command = friends.broadcastRouting->getCommand(compound->getCommandPool());
+        wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
+        LowerCommand* lc = activateCommand(compound->getCommandPool());
+        lc->magic.txStartTime = now;
+        lc->magic.senderType = getFUN()->getLayer<Component*>()->getStationType();
 		getDataTransmissionService()->sendData(command->peer.targetMACAddress, compound);
 	}
 	else assure(false, "Not a routing Compound!");
@@ -129,14 +143,19 @@ Lower2Copper::onData(const wns::osi::PDUPtr& pdu, double ber, bool collision)
 {
 	assure(wns::dynamicCast<wns::ldk::Compound>(pdu), "not a CompoundPtr");
 
+    // FIRST: create a copy instead of working on the real compound
+    wns::ldk::CompoundPtr compound = wns::staticCast<wns::ldk::Compound>(pdu)->copy();
+
+#ifndef NDEBUG
+    if(jsonTracing->hasObservers())
+        traceIncoming(compound, collision);
+#endif
+
 	// In case of a collision -> throw away ... packet can't be decoded
 	if (collision)
 	{
 		return;
 	}
-
-	// FIRST: create a copy instead of working on the real compound
-	wns::ldk::CompoundPtr compound = wns::staticCast<wns::ldk::Compound>(pdu)->copy();
 
 	if (hasCommandOf(friends.unicastRouting, compound)) {
 		UnicastUpperCommand* uc = friends.unicastRouting->getCommand(compound->getCommandPool());
@@ -196,10 +215,115 @@ Lower2Copper::setMACAddress(const wns::service::dll::UnicastAddress& _address)
 void
 Lower2Copper::pushUp(const wns::ldk::CompoundPtr& compound, double ber, const wns::osi::PDUPtr& pdu)
 {
-	LowerCommand* lc = activateCommand(compound->getCommandPool());
+	LowerCommand* lc = getCommand(compound->getCommandPool());
 	lc->local.per = 1.0 - pow(1.0 - ber, pdu->getLengthInBits());
 	notifyBERConsumers(ber, pdu->getLengthInBits());
 	this->wns::ldk::FunctionalUnit::onData(compound);
 } // pushUp
+
+void
+Lower2Copper::traceIncoming(wns::ldk::CompoundPtr compound, bool collision)
+{
+    wns::probe::bus::json::Object objdoc;
+
+    Component* myLayer;
+
+    myLayer = getFUN()->getLayer<Component*>();
+
+    LowerCommand* lc;
+    lc = getCommand(compound->getCommandPool());
+
+    UnicastUpperCommand* uc = 
+        friends.unicastRouting->getCommand(compound->getCommandPool());
+
+    wns::service::dll::UnicastAddress dstAdr;
+
+    bool isBroadcast;
+
+    if (hasCommandOf(friends.unicastRouting, compound)) 
+    {
+        dstAdr = uc->peer.targetMACAddress;
+        isBroadcast = false;
+    }
+    else
+    {
+        isBroadcast = true;
+    }
+
+    std::string src;
+    std::string dst("Broadcast");
+    std::string me;
+    std::string sender;
+
+    std::stringstream s;
+    std::stringstream m;
+    std::stringstream d;
+    std::stringstream snd;
+
+    if(myLayer->getStationType() == StationTypes::router())
+    {
+        m << "BS";
+    }
+    else
+    {
+        m << "UT";
+    }
+
+    if(lc->magic.senderType == StationTypes::router())
+    {
+        s << "BS";
+        snd << "BS";
+        /* For now we assume the destination has the other station type */
+        d << "UT";
+    }
+    else
+    {
+        s << "UT";
+        snd << "UT";
+        /* For now we assume the destination has the other station type */
+        d << "BS";
+    }
+  
+    s << uc->peer.sourceMACAddress;
+    sender = s.str();
+
+    m << address;
+    me = m.str();
+
+    /* Glue does not support L2 multihop, sender always is source */
+    snd << uc->peer.sourceMACAddress;
+    src = snd.str();
+    
+    if(!isBroadcast)
+    {
+        d << dstAdr;
+        dst = d.str();
+    }
+
+    objdoc["Transmission"]["ReceiverID"] = wns::probe::bus::json::String(me);
+    objdoc["Transmission"]["SenderID"] = wns::probe::bus::json::String(sender);
+    objdoc["Transmission"]["SourceID"] = wns::probe::bus::json::String(src);
+    objdoc["Transmission"]["DestinationID"] = wns::probe::bus::json::String(dst);
+
+    wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
+
+    objdoc["Transmission"]["Start"] =
+         wns::probe::bus::json::Number(lc->magic.txStartTime);
+        
+    objdoc["Transmission"]["Stop"] = wns::probe::bus::json::Number(now);
+
+    // We abuse this to watch per station results
+    objdoc["Transmission"]["Subchannel"] = wns::probe::bus::json::Number(
+        uc->peer.sourceMACAddress.getInteger());
+    
+    objdoc["Transmission"]["TxPower"] = 
+        wns::probe::bus::json::Number(0.0); // Unknown
+    objdoc["Transmission"]["RxPower"] = 
+        wns::probe::bus::json::Number(0.0);
+    objdoc["Transmission"]["InterferencePower"] = 
+        wns::probe::bus::json::Number(collision?200.0:-200.0);
+
+    wns::probe::bus::json::probeJSON(jsonTracing, objdoc);
+}
 
 

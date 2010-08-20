@@ -46,12 +46,9 @@ Component::Component(
 	broadcastUpperConvergence(NULL),
 	lowerConvergence(NULL),
 	sourceMACAddress(wns::service::dll::UnicastAddress(config.get<int>("address"))),
-        stationType_(StationTypes::fromString(config.get<std::string>("stationType"))),
+    stationType_(StationTypes::fromString(config.get<std::string>("stationType"))),
 	logger(config.get<wns::pyconfig::View>("logger"))
 {
-    getNode()->getContextProviderCollection().
-        addProvider(wns::probe::bus::contextprovider::Callback
-                    ("DLL.StationType", boost::bind(&glue::Component::getStationType, this )));
 } // Component
 
 void

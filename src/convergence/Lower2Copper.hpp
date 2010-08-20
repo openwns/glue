@@ -15,6 +15,8 @@
 
 #include <GLUE/convergence/Lower.hpp>
 
+#include <WNS/probe/bus/ContextCollector.hpp>
+
 #include <WNS/service/phy/copper/DataTransmission.hpp>
 #include <WNS/service/phy/copper/Notification.hpp>
 #include <WNS/service/phy/copper/Handler.hpp>
@@ -73,6 +75,8 @@ namespace glue { namespace convergence {
 
 		void pushUp(const wns::ldk::CompoundPtr& compound, double ber, const wns::osi::PDUPtr& pdu);
 
+        void traceIncoming(wns::ldk::CompoundPtr compound, bool collision);
+
 		wns::pyconfig::View config;
 		wns::logger::Logger logger;
 
@@ -80,6 +84,9 @@ namespace glue { namespace convergence {
 			UnicastUpper* unicastRouting;
 			BroadcastUpper* broadcastRouting;
 		} friends;
+
+        /** @brief Detailed output about channel state */
+        wns::probe::bus::ContextCollectorPtr jsonTracing;
 
 		wns::service::phy::copper::DataTransmission* dataTransmission;
 		wns::service::phy::copper::Notification* notificationService;

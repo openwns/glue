@@ -39,7 +39,10 @@ namespace glue { namespace convergence {
 			double per;
 		} local;
 		struct {} peer;
-		struct {} magic;
+		struct {
+            wns::simulator::Time txStartTime;
+            StationType senderType;
+        } magic;
 	};
 
 	class Lower :
