@@ -107,7 +107,13 @@ Lower2Copper::doSendData(const wns::ldk::CompoundPtr& compound)
         wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
         LowerCommand* lc = activateCommand(compound->getCommandPool());
         lc->magic.txStartTime = now;
-        lc->magic.senderType = getFUN()->getLayer<Component*>()->getStationType();
+
+        /* Only the "real" Glue Layer support getStationType, the stubs in the tests do not*/
+        wns::ldk::ILayer* layer = getFUN()->getLayer();
+        Component* glueLayer = dynamic_cast<Component*>(layer);
+        if(glueLayer != NULL)
+            lc->magic.senderType = glueLayer->getStationType();
+
 		getDataTransmissionService()->sendData(command->peer.targetMACAddress, compound);
 	}
  	else if (hasCommandOf(friends.broadcastRouting, compound)) {
@@ -115,7 +121,13 @@ Lower2Copper::doSendData(const wns::ldk::CompoundPtr& compound)
         wns::simulator::Time now = wns::simulator::getEventScheduler()->getTime();
         LowerCommand* lc = activateCommand(compound->getCommandPool());
         lc->magic.txStartTime = now;
-        lc->magic.senderType = getFUN()->getLayer<Component*>()->getStationType();
+
+        /* Only the "real" Glue Layer support getStationType, the stubs in the tests do not*/
+        wns::ldk::ILayer* layer = getFUN()->getLayer();
+        Component* glueLayer = dynamic_cast<Component*>(layer);
+        if(glueLayer != NULL)
+            lc->magic.senderType = glueLayer->getStationType();
+
 		getDataTransmissionService()->sendData(command->peer.targetMACAddress, compound);
 	}
 	else assure(false, "Not a routing Compound!");
@@ -226,9 +238,11 @@ Lower2Copper::traceIncoming(wns::ldk::CompoundPtr compound, bool collision)
 {
     wns::probe::bus::json::Object objdoc;
 
-    Component* myLayer;
-
-    myLayer = getFUN()->getLayer<Component*>();
+    /* Only the "real" Glue Layer support getStationType, the stubs in the tests do not*/
+    wns::ldk::ILayer* layer = getFUN()->getLayer();
+    Component* myLayer = dynamic_cast<Component*>(layer);
+    if(myLayer == NULL)
+        return;
 
     LowerCommand* lc;
     lc = getCommand(compound->getCommandPool());
